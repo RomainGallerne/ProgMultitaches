@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
   /* etape 4 : récupération du fichier */
 
   // construction du nom du chemin vers le fichier
-  char* filepath = new char[strlen(argv[3])+16];
+  char* filepath = new char(strlen(argv[3])+16);
   filepath[0] = '\0';
   strcat(filepath, "./emission/");
   strcat(filepath, argv[3]);
@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
   struct stat attributes;
   if(stat(filepath, &attributes) == -1){
     perror("Client : erreur stat");
-    delete filepath;
+    free(filepath);
     exit(1);
   }
 
@@ -145,10 +145,10 @@ int main(int argc, char *argv[]) {
   FILE* file = fopen(filepath, "rb");
   if(file == NULL){
     perror("Client : erreur ouverture fichier \n");
-    delete filepath;
+    free(filepath);
     exit(1);   
   }
-  delete filepath;
+  free(filepath);
 
   while(total_lu < file_size || totalSent < total_lu){
     size_t read = fread(buffer, sizeof(char), MAX_BUFFER_SIZE, file);

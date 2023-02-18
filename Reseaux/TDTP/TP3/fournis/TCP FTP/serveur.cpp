@@ -16,7 +16,7 @@ int sendTCP(int sock, void *msg, int sizeMsg){
   if(w == EBADF){return 0;} //Socket fermée
   else if(w == -1){return -1;}  //Erreur du dépôt
   else if(w == sizeMsg){return w;} //Dépôt réussi
-  else {return w+sendTCP(sock,(void *)(msg+w),sizeMsg-w);} //Dépôt incomplet
+  else {return w+sendTCP(sock,msg+w,sizeMsg-w);} //Dépôt incomplet
 }
 
 int recvTCP(int sock, void *msg, int sizeMsg){
@@ -75,30 +75,21 @@ int main(int argc, char *argv[])
   struct sockaddr_in sockaddrRetour;
   socklen_t lgRetour = sizeof(sockaddrRetour);
  
-  /*Boucle d'acceptation*/
-
-  int f; int dSC; int numClient=0;
-
+  //Traiter itérativement les clients
   while(1){
 
-    dSC = accept(ds,(struct sockaddr *)&sockaddrRetour,&lgRetour); /*On accepte la connexion*/
+    int dSC = accept(ds,(struct sockaddr *)&sockaddrRetour,&lgRetour); /*On accepte la connexion*/
     if(dSC==-1){
       perror("Serveur : Erreur à l'acceptation de la connexion\n");
       close(ds);
       exit(1);
     } else {
       std::cout << "Connexion Acceptée depuis\nIP : " << inet_ntoa(sockaddrRetour.sin_addr) << "\nPort : " << ntohs(sockaddrRetour.sin_port) << "\n\n";
-      f = fork();
-      numClient += 1;
     }
 
-    if(f==0){close(ds); break;}  //Fermeture de la ds d'écoute dans le fils
-    else {close(dSC);} //Fermeture de la ds client dans le père qui se met en attente d'un nouveau client
-  }
-
-  if(f==0){
     int nb_recv = 0;
-    size_t recvRetour;
+    int recvRetour;
+    char rep [4000];
     int tailleFichier;
     int tailleNomFichier;
     int totalRecv = 0; // un compteur du nombre total d'octets recus d'un client
@@ -108,6 +99,7 @@ int main(int argc, char *argv[])
     recvRetour = recvTCP(dSC, (void *)&tailleNomFichier, sizeof(int));
     if(recvRetour<=0){
       perror("Serveur : Erreur du retour\n");
+      close(ds);
       close(dSC);
       exit(1);
     } else {
@@ -121,6 +113,7 @@ int main(int argc, char *argv[])
     recvRetour = recvTCP(dSC, nomFichier, tailleNomFichier);
     if(recvRetour<0){
       perror("Serveur : Erreur du retour\n");
+      close(ds);
       close(dSC);
       exit(1);
     } else {
@@ -132,6 +125,7 @@ int main(int argc, char *argv[])
     recvRetour = recvTCP(dSC, (void *)&tailleFichier, sizeof(int));
     if(recvRetour<=0){
       perror("Serveur : Erreur du retour\n");
+      close(ds);
       close(dSC);
       exit(1);
     } else {
@@ -139,30 +133,16 @@ int main(int argc, char *argv[])
       std::cout << inet_ntoa(sockaddrRetour.sin_addr) << " - " <<  ntohs(sockaddrRetour.sin_port) << " : Le fichier envoyé fait " << tailleFichier << "o\n";
     }
 
-    // construction du nom du chemin vers le fichier    
-    char numClientChar[sizeof(int)]; // Nombre maximal de clients différents
-    sprintf(numClientChar, "%d", numClient); // Conversion de l'entier
-
-    char* filepath = new char[MAX_BUFFER_SIZE];
+    // construction du nom du chemin vers le fichier
+    char* filepath = new char(strlen(argv[3])+16);
     filepath[0] = '\0';
     strcat(filepath, "./reception/");
-    strcat(filepath, numClientChar);
-    int mkdRet = mkdir(filepath, 0755 );   // drwxr-xr-x
-    if(mkdRet < 0){
-      perror("Serveur : Erreur lors de la création du répertoire client\n");
-      close(dSC);
-      delete filepath;
-      exit(1);
-    } 
-    strcat(filepath, "/");
     strcat(filepath, nomFichier);
-
-    std::cout << "\n\nRepertoire d'arrivé du fichier : " << filepath << "\n\n";
    
     // On ouvre le fichier dans lequel on va écrire
     FILE* file = fopen(filepath, "wb");
     if(file == NULL){
-      printf("Serveur : erreur ouverture fichier %s: %s\n", filepath, strerror(errno));
+      perror("Serveur : erreur ouverture fichier: \n");
       exit(1);  
     }
 
@@ -171,33 +151,25 @@ int main(int argc, char *argv[])
       recvRetour = recvTCP(dSC, (void *)buffer, MAX_BUFFER_SIZE);
       if(recvRetour<=0){
         perror("Serveur : Erreur du retour ");
-        printf("%li\n",recvRetour);
-        delete filepath;
+        printf("%i\n",recvRetour);
         close(ds);
         close(dSC);
         exit(1);
       } else {
         nb_recv += 1;
         totalRecv += recvRetour;
-        //Ecriture progressive du message
         size_t written = fwrite(buffer, sizeof(char), recvRetour, file);
-        if(written < recvRetour){ 
+        if(written < recvRetour){  // cette ligne est valide uniquement pour ce simple exemple
           perror("Serveur : Erreur a l'ecriture du fichier \n");
-          delete filepath;
-          close(ds);
-          close(dSC);
-          exit(1);
         }
       }
     }
-    std::cout << "Serveur " << getpid() << " : L'entiereté du fichier a bien été reçu.\n";
-    printf("Serveur %i : ecriture dans fichier reussie. Vous pouvez vérifier la création du fichier et son contenu.\n",getpid());
+    std::cout << "Serveur : L'entiereté du fichier a bien été reçu.\n";
+    printf("Serveur : ecriture dans fichier reussie. Vous pouvez vérifier la création du fichier et son contenu.\n");
     fclose(file); 
-    delete filepath;
     close(dSC);
-    printf("Serveur %i : j'ai effectué %i appels à recv \n",getpid(), nb_recv); 
-    printf("Serveur %i : Fin de traitement du client\n",getpid());
-    return 0;
+    printf("Serveur : j'ai effectué %i appels à recv \n", nb_recv); 
+    std::cout << "\nServeur : Changement de client.\n\n";
   }
     
   printf("Serveur : c'est fini\n");
