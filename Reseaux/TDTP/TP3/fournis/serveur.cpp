@@ -1,12 +1,12 @@
-#include <stdio.h> 
-#include <unistd.h>
+#include <stdio.h> //perror
+#include <unistd.h> //close
 #include <sys/types.h>
-#include <sys/socket.h>
+#include <sys/socket.h> //socket
 #include <netdb.h>
 #include <stdlib.h>
 #include <arpa/inet.h>
 #include <string.h>
-#include <sys/stat.h>
+#include <sys/stat.h> //mkdir
 #include <iostream>
 
 #define MAX_BUFFER_SIZE 146980

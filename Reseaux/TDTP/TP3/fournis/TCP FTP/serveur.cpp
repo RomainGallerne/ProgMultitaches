@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
     }
 
     // construction du nom du chemin vers le fichier
-    char* filepath = new char(strlen(argv[3])+16);
+    char* filepath = new char(strlen(nomFichier)+16);
     filepath[0] = '\0';
     strcat(filepath, "./reception/");
     strcat(filepath, nomFichier);
