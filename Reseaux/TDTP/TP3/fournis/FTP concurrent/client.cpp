@@ -150,6 +150,7 @@ int main(int argc, char *argv[]) {
   }
   delete filepath;
 
+  //Boucle d'envoi du fichier
   while(total_lu < file_size || totalSent < total_lu){
     size_t read = fread(buffer, sizeof(char), MAX_BUFFER_SIZE, file);
     if(read == 0){
