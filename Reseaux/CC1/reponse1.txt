@@ -1,0 +1,8 @@
+Super ! Vous avez reussi a me joindre :-).
+ L'etape suivante dans votre programme est de :
+ - mettre en place une socket d'ecoute en TCP 
+ - envoyer l'adresse de cette socket d'ecoute (sous la forme sockaddr_in) à celui qui vous a envoye cette instruction. Bien comprendre l'extrait : a celui qui vous a envoye cette instruction (c'est à dire : une réponse à lexpéditeur) ;
+ - terminer les echanges en UDP ; 
+ - attendre l'arrivee d'un client TCP ; 
+ - recevoir et afficher la prochaine instruction emise par ce client, sous forme de chaine de caracteres (attention a ce que cela implique pour receptionner correctement un tel message. Indice : un entier (int) est à recevoir avant le texte de l'instruction).
+ Fin instruction
