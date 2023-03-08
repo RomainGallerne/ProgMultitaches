@@ -1,0 +1,4 @@
+Exo 1 :
+    2 - Les autres tâches sont terminés de force
+    3 - Le programme entier termine sans attendre
+    
